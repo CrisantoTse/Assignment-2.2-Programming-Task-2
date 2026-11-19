@@ -1,4 +1,3 @@
-"""Integration checks using the actual demo CSV."""
 
 import unittest
 from pathlib import Path
@@ -18,14 +17,12 @@ from numcompute.preprocessing import (
 class TestStageCIntegration(unittest.TestCase):
 
     def test_demo_data_processing(self):
-        # Locate the demo file relative to this test file.
         path = (
             Path(__file__).resolve().parent.parent
             / "demo"
             / "sample_data.csv"
         )
 
-        # Read age, hours and the constant column as numeric data.
         numeric = load_csv(
             path,
             skip_header=1,
@@ -44,7 +41,6 @@ class TestStageCIntegration(unittest.TestCase):
             equal_nan=True,
         )
 
-        # Chunked reading must match whole-file reading.
         chunks = list(iter_csv_chunks(
             path,
             chunk_size=2,
@@ -59,7 +55,6 @@ class TestStageCIntegration(unittest.TestCase):
             equal_nan=True,
         )
 
-        # Fill numeric NaN values with zero.
         filled = SimpleImputer(fill_value=0).fit_transform(numeric)
 
         assert_array_equal(
@@ -73,7 +68,6 @@ class TestStageCIntegration(unittest.TestCase):
             ],
         )
 
-        # Standardize numeric columns.
         standardized = StandardScaler().fit_transform(filled)
 
         assert_allclose(
@@ -88,7 +82,6 @@ class TestStageCIntegration(unittest.TestCase):
         )
         assert_array_equal(standardized[:, 2], np.zeros(5))
 
-        # Check MinMaxScaler as an alternative numeric transformation.
         normalized = MinMaxScaler().fit_transform(filled)
 
         assert_allclose(
@@ -102,7 +95,6 @@ class TestStageCIntegration(unittest.TestCase):
             ],
         )
 
-        # Read the city column separately as text.
         cities = load_csv(
             path,
             skip_header=1,
@@ -110,8 +102,6 @@ class TestStageCIntegration(unittest.TestCase):
             dtype=str,
         )
 
-        # CSV string missing values become empty strings.
-        # Convert them to None for the encoder's missing-category rule.
         cities = cities.astype(object)
         cities[cities == ""] = None
 
@@ -136,7 +126,6 @@ class TestStageCIntegration(unittest.TestCase):
             ],
         )
 
-        # Combine standardized numeric data and encoded categories.
         combined = np.concatenate(
             [standardized, encoded],
             axis=1,
@@ -146,7 +135,6 @@ class TestStageCIntegration(unittest.TestCase):
         self.assertEqual(combined.dtype, np.dtype("float64"))
         self.assertTrue(np.all(np.isfinite(combined)))
 
-        # Preprocessing must not overwrite the original missing values.
         self.assertTrue(np.isnan(numeric[1, 1]))
         self.assertTrue(np.isnan(numeric[2, 0]))
 

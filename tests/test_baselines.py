@@ -25,7 +25,6 @@ class TestLoopMean(unittest.TestCase):
             loop_mean(data), mean(data),
             rtol=1e-10, atol=1e-12,
         )
-        # Ensure the function does not modify its input.
         assert_array_equal(data, before)
 
     def test_invalid_input(self):
@@ -43,7 +42,6 @@ class TestLoopStandardize(unittest.TestCase):
         assert_allclose(result, [[-1, 0], [1, 0]])
 
     def test_matches_project_scaler(self):
-        # Test non-contiguous data with a constant column.
         data = np.random.default_rng(42).normal(size=(20, 6))[:, ::2]
         data[:, 1] = 7.0
         before = data.copy()
@@ -69,7 +67,6 @@ class TestLoopStandardize(unittest.TestCase):
                     loop_standardize(data)
 class TestLoopMSE(unittest.TestCase):
     def test_known_results(self):
-        # Check 1D results and the total-element denominator for 2D.
         self.assertAlmostEqual(
             loop_mse([1, 2, 3], [1, 4, 2]), 5 / 3
         )
@@ -111,7 +108,6 @@ class TestLoopMSE(unittest.TestCase):
 
 class TestFullSortTopK(unittest.TestCase):
     def test_boundary_ties(self):
-        # Earlier indices win when a tie crosses the cutoff.
         values, indices = full_sort_topk([5, 9, 9, 9, 4], 2)
         assert_array_equal(values, [9, 9])
         assert_array_equal(indices, [1, 2])
@@ -126,7 +122,6 @@ class TestFullSortTopK(unittest.TestCase):
         assert_array_equal(indices, [0, 2, 1])
 
     def test_matches_project_topk(self):
-        # Float64 data contains ties and uses a non-contiguous view.
         rng = np.random.default_rng(42)
         data = rng.integers(-5, 6, size=100).astype(np.float64)[::2]
         before = data.copy()

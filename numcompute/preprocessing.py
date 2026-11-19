@@ -1,4 +1,3 @@
-"""Tabular preprocessing with explicit fitted state and independent outputs."""
 
 from numbers import Real
 import numpy as np
@@ -6,37 +5,8 @@ from .utils import _as_float_array
 
 
 class SimpleImputer:
-    """Replace numeric NaN cells with a finite constant.
-    
-        Parameters
-        ----------
-        strategy : str, default='constant'
-            Only 'constant' is supported in the baseline.
-        fill_value : real numeric scalar, default=0.0
-            Must be finite and representable as float64. Booleans are rejected.
-    
-        Attributes
-        ----------
-        n_features_in_ : int
-            Number of columns recorded by the last successful fit.
-        fill_value_ : float
-            Validated constant recorded by the last successful fit. Changes to
-            constructor parameters take effect on the next fit.
-    
-        Notes
-        -----
-        Inputs must be 2D real numeric data, converted to independent float64
-        arrays using the shared validator. NaN is the only missing value;
-        other values, including infinities, are preserved. Scalers separately
-        reject infinity. All-NaN columns are allowed. No training rows are stored.
-        """
 
     def __init__(self, strategy='constant', fill_value=0.0):
-        """Store and validate parameters; O(1) time and space.
-
-        Raise TypeError for unsupported types and ValueError for an unsupported
-        strategy or a constant not representable as finite float64.
-        """
         self.strategy = strategy
         self.fill_value = fill_value
         self._validated_fill_value()
@@ -59,7 +29,6 @@ class SimpleImputer:
         return value
 
     def fit(self, X, y=None):
-        """Record feature count and fill constant; return self."""
         fill = self._validated_fill_value()
         array = _as_float_array(X, name='X', ndim=2)
         if array.shape[0] == 0 or array.shape[1] == 0:
@@ -69,7 +38,6 @@ class SimpleImputer:
         return self
 
     def transform(self, X):
-        """Return a new float64 array with NaN replaced by fitted fill_value_."""
         if not hasattr(self, 'n_features_in_'):
             raise RuntimeError('SimpleImputer must be fitted before transform.')
         array = _as_float_array(X, name='X', ndim=2)
@@ -80,17 +48,11 @@ class SimpleImputer:
         return array
 
     def fit_transform(self, X, y=None):
-        """Fit on X, then return its transformed independent float64 copy."""
         return self.fit(X, y=y).transform(X)
 
 class StandardScaler:
-    """Standardize each column using training mean and population std.
-    Ignore NaN during fit and preserve NaN during transform.
-    Reject infinity and all-NaN training columns.
-    """
 
     def _validate_input(self, X, *, fitting=False):
-        """Validate input and return an independent float64 array."""
         array = _as_float_array(X, name="X", ndim=2)
 
         if np.any(np.isinf(array)):
@@ -106,22 +68,8 @@ class StandardScaler:
         return array
 
     def fit(self, X, y=None):
-        """Learn column means and population standard deviations.
-
-        X: 2D real numeric data of shape (n_samples, n_features).
-        y: ignored; included for the shared transformer interface.
-        Return self. A successful refit replaces previous fitted state.
-
-        Raise TypeError for unsupported input types.
-        Raise ValueError for invalid shape, empty data, infinity,
-        all-NaN columns or non-finite computed statistics.
-
-        Time: O(n_samples * n_features).
-        Additional space: O(n_samples * n_features).
-        """
         array = self._validate_input(X, fitting=True)
 
-        # Calculate each column's statistics, ignoring NaN.
         with np.errstate(over="ignore", invalid="ignore"):
             mean = np.nanmean(array, axis=0)
             scale = np.nanstd(array, axis=0, ddof=0)
@@ -129,10 +77,8 @@ class StandardScaler:
         if not np.all(np.isfinite(mean)) or not np.all(np.isfinite(scale)):
             raise ValueError("Training statistics exceed the supported numeric range.")
 
-        # Avoid division by zero for constant training columns.
         scale = np.where(scale == 0.0, 1.0, scale)
 
-        # Save state only after all validation succeeds.
         self.mean_ = mean
         self.scale_ = scale
         self.n_features_in_ = array.shape[1]
@@ -140,20 +86,6 @@ class StandardScaler:
         return self
 
     def transform(self, X):
-        """Transform data using the previously fitted statistics.
-
-        X: 2D real numeric data with n_features_in_ columns.
-        Return an independent float64 array with the same shape.
-        Allow zero samples and preserve NaN. Do not refit or modify X.
-
-        Raise RuntimeError before fit.
-        Raise TypeError for unsupported input types.
-        Raise ValueError for invalid shape, wrong feature count,
-        infinity or arithmetic overflow.
-
-        Time: O(n_samples * n_features).
-        Additional space: O(n_samples * n_features).
-        """
         if not hasattr(self, "n_features_in_"):
             raise RuntimeError("StandardScaler must be fitted before transform.")
 
@@ -167,30 +99,21 @@ class StandardScaler:
         with np.errstate(over="ignore", invalid="ignore"):
             result = (array - self.mean_) / self.scale_
 
-        # Input NaN is allowed, but finite input must not become inf/NaN.
         if np.any(np.isfinite(array) & ~np.isfinite(result)):
             raise ValueError("Transformed values exceed the supported numeric range.")
 
         return result
 
     def fit_transform(self, X, y=None):
-        """Fit on X and return its standardized float64 copy."""
         return self.fit(X, y=y).transform(X)
 
 class MinMaxScaler:
-    """Scale columns using training minima and maxima.
-
-    Ignore NaN during fit and preserve NaN during transform.
-    New data is not clipped to feature_range.
-    """
 
     def __init__(self, feature_range=(0, 1)):
-        """Validate the target range; O(1) time and space."""
         self.feature_range = feature_range
         self._validate_range()
 
     def _validate_range(self):
-        """Return validated float bounds and their span."""
         if not isinstance(self.feature_range, (tuple, list)):
             raise TypeError("feature_range must be a tuple or list.")
 
@@ -226,7 +149,6 @@ class MinMaxScaler:
         return lower, upper, span
 
     def _validate_input(self, X, *, fitting=False):
-        """Return a 2D float64 copy; allow NaN but reject infinity."""
         array = _as_float_array(X, name="X", ndim=2)
 
         if np.any(np.isinf(array)):
@@ -242,17 +164,6 @@ class MinMaxScaler:
         return array
 
     def fit(self, X, y=None):
-        """Learn each column's minimum and maximum; return self.
-
-        X: nonempty 2D real numeric data, shape (N, D).
-        y: ignored. All-NaN columns and infinity are rejected.
-        A successful refit replaces previous state; a failed fit preserves it.
-
-        Raise TypeError for invalid types; ValueError for invalid shape,
-        empty data, invalid bounds or an unrepresentable training range.
-
-        Time: O(N * D). Additional space: O(N * D).
-        """
         lower, upper, span = self._validate_range()
         array = self._validate_input(X, fitting=True)
 
@@ -265,7 +176,6 @@ class MinMaxScaler:
         if not np.all(np.isfinite(data_range)):
             raise ValueError("Training ranges exceed the supported numeric range.")
 
-        # Constant columns use an effective denominator of 1.
         effective_range = np.where(data_range == 0.0, 1.0, data_range)
 
         self.data_min_ = data_min
@@ -279,17 +189,6 @@ class MinMaxScaler:
         return self
 
     def transform(self, X):
-        """Scale X using the previously fitted parameters.
-
-        X: 2D real numeric data with n_features_in_ columns.
-        Return an independent float64 array of the same shape.
-        Allow zero samples, preserve NaN, and do not clip or refit.
-
-        Raise RuntimeError before fit; TypeError for invalid input types;
-        ValueError for invalid shape, wrong columns, infinity or overflow.
-
-        Time: O(N * D). Additional space: O(N * D).
-        """
         if not hasattr(self, "n_features_in_"):
             raise RuntimeError("MinMaxScaler must be fitted before transform.")
 
@@ -311,24 +210,15 @@ class MinMaxScaler:
         return result
 
     def fit_transform(self, X, y=None):
-        """Fit on X and return its scaled float64 copy. """
         return self.fit(X, y=y).transform(X)
 
 class OneHotEncoder:
-    """Encode categories in first-appearance order.
-
-    Each input column contains strings or real numeric categories.
-    None and numeric NaN represent the same missing category.
-    Output is a dense float64 array.
-    """
 
     def __init__(self, handle_unknown="error"):
-        """Validate unknown-category behavior; O(1) time and space."""
         self.handle_unknown = handle_unknown
         self._validate_option()
 
     def _validate_option(self):
-        """Return the validated unknown-category option."""
         if not isinstance(self.handle_unknown, str):
             raise TypeError("handle_unknown must be a string.")
 
@@ -338,7 +228,6 @@ class OneHotEncoder:
         return self.handle_unknown
 
     def _category_key(self, value):
-        """Normalize missing values and validate one category."""
         if value is None:
             return None
 
@@ -351,7 +240,6 @@ class OneHotEncoder:
                 "not booleans or other objects."
             )
 
-        # NaN is unequal to itself; normalize it to the missing key.
         if value != value:
             return None
 
@@ -361,7 +249,6 @@ class OneHotEncoder:
         return value
 
     def _validate_input(self, X, *, fitting=False):
-        """Return a normalized 2D object array without modifying X."""
         try:
             array = np.array(X, dtype=object, copy=True)
         except ValueError as exc:
@@ -393,18 +280,6 @@ class OneHotEncoder:
         return array
 
     def fit(self, X, y=None):
-        """Learn categories from nonempty 2D input X; return self.
-
-        X has shape (N, D); y is ignored.
-        Store categories_ and n_features_in_. Missing values are allowed.
-        Successful refit replaces state; failed fit preserves previous state.
-
-        Raise TypeError for unsupported or mixed category types.
-        Raise ValueError for invalid shape, empty data, infinity or options.
-
-        Expected time: O(N * D), treating category hashing as constant time.
-        Additional space: O(N * D + K), where K is total learned categories.
-        """
         option = self._validate_option()
         array = self._validate_input(X, fitting=True)
 
@@ -437,19 +312,6 @@ class OneHotEncoder:
         return self
 
     def transform(self, X):
-        """Encode 2D input using previously learned categories.
-
-        X has shape (N, n_features_in_); zero samples are allowed.
-        Return an independent float64 array of shape (N, K).
-        Unknown categories raise an error or produce an all-zero block
-        for their input feature, depending on the fitted option.
-
-        Raise RuntimeError before fit; TypeError for invalid categories;
-        ValueError for invalid shape, feature count, infinity or unknowns.
-
-        Expected time: O(N * D + N * K).
-        Additional space: O(N * D + N * K), including dense output.
-        """
         if not hasattr(self, "n_features_in_"):
             raise RuntimeError("OneHotEncoder must be fitted before transform.")
 
@@ -485,26 +347,9 @@ class OneHotEncoder:
         return result
 
     def fit_transform(self, X, y=None):
-        """Fit on X and return its dense float64 encoding."""
         return self.fit(X, y=y).transform(X)
 
 class ColumnSelector:
-    """Select columns from a 2D table in the requested order.
-
-    Parameters
-    ----------
-    columns : list, tuple or 1D numpy.ndarray of integers
-        Non-empty, unique, non-negative column indices.
-        Boolean indices are rejected.
-    dtype : optional NumPy dtype specification
-        None preserves the input dtype. Otherwise, selected values
-        are converted using NumPy's astype conversion rules.
-
-    Notes
-    -----
-    Outputs are independent arrays; object-array elements are not
-    deep-copied. Non-contiguous inputs are supported.
-    """
 
     def __init__(self, columns, dtype=None):
         self.columns = columns
@@ -516,7 +361,6 @@ class ColumnSelector:
         if not isinstance(self.columns, (list, tuple, np.ndarray)):
             raise TypeError("columns must be a list, tuple or 1D array.")
 
-        # Object dtype preserves booleans for explicit validation.
         columns = np.asarray(self.columns, dtype=object)
 
         if columns.ndim != 1 or columns.size == 0:
@@ -558,19 +402,6 @@ class ColumnSelector:
         return result
 
     def fit(self, X, y=None):
-        """Validate the table and store column-selection state.
-
-        X has shape (n_samples, n_features); both dimensions must
-        be non-zero. y is ignored. Return self.
-
-        Raise TypeError for invalid column types and ValueError for
-        invalid shape, indices or conversion. NumPy dtype errors
-        propagate. A failed refit preserves previous fitted state.
-
-        For n rows, p input columns and k selected columns, selection
-        and conversion cost O(n*k) time and space. Converting a
-        nested input sequence to an array additionally costs O(n*p).
-        """
         array = self._as_table(X)
         columns = self._validated_columns()
         dtype = self._validated_dtype()
@@ -581,7 +412,6 @@ class ColumnSelector:
         if any(column >= array.shape[1] for column in columns):
             raise ValueError("columns contains an out-of-range index.")
 
-        # Check conversion before committing the new fitted state.
         self._select(array, columns, dtype)
 
         self.columns_ = columns
@@ -590,19 +420,6 @@ class ColumnSelector:
         return self
 
     def transform(self, X):
-        """Return selected columns with shape (n_samples, k).
-
-        Require the fitted feature count; zero samples are allowed.
-        Preserve column order and return an independent array.
-
-        Raise RuntimeError before fit or if selection parameters
-        changed after fit. Raise ValueError for invalid input shape,
-        feature count or conversion. NumPy dtype errors propagate.
-
-        Selection and conversion cost O(n*k) time and space.
-        Nested input conversion additionally costs O(n*p), where
-        p is the input feature count. Object copies are shallow.
-        """
         if not hasattr(self, "n_features_in_"):
             raise RuntimeError("ColumnSelector must be fitted before transform.")
 
@@ -626,9 +443,4 @@ class ColumnSelector:
         return self._select(array, self.columns_, self.dtype_)
 
     def fit_transform(self, X, y=None):
-        """Fit and return selected columns, equivalent to fit then transform.
-
-        Accept the same inputs and raise the same errors as fit and
-        transform. Time and space have the same asymptotic bounds.
-        """
         return self.fit(X, y).transform(X)

@@ -1,4 +1,3 @@
-"""Tests for evaluation metrics."""
 
 import unittest
 import numpy as np
@@ -466,11 +465,8 @@ class TestClassificationMetricOptions(unittest.TestCase):
         )
 
 class TestMetricsRegression(unittest.TestCase):
-    """Regression tests for numeric stability and input validation."""
 
     def test_mse_large_finite_mean(self):
-        # Each squared error is about 1e308.
-        # Their mean is representable even though their sum overflows.
         result = mse([1e154, 1e154], [0.0, 0.0])
 
         self.assertTrue(np.isfinite(result))
@@ -490,7 +486,6 @@ class TestMetricsRegression(unittest.TestCase):
                     mse(true, pred)
 
     def test_confusion_matrix_preserves_large_integer_labels(self):
-        # Converting these labels to float64 would change the integer.
         large_label = 2**53 + 1
         true = [large_label, 0.5, large_label]
         pred = [large_label, large_label, 0.5]

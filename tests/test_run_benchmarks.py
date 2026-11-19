@@ -13,7 +13,6 @@ import json
 
 class TestCheckEquivalent(unittest.TestCase):
     def test_close_results(self):
-        # Small floating-point differences are acceptable.
         check_equivalent(1.0, 1.000000000001)
         check_equivalent([1.0, 2.0], [1.0, 2.000000000001])
 
@@ -22,7 +21,6 @@ class TestCheckEquivalent(unittest.TestCase):
         actual = ([9.0, 9.0], [1, 2])
         check_equivalent(expected, actual, exact=True)
 
-        # Equal values do not make different indices acceptable.
         wrong = ([9.0, 9.0], [2, 1])
         with self.assertRaises(AssertionError):
             check_equivalent(expected, wrong, exact=True)
@@ -35,7 +33,6 @@ class TestCheckEquivalent(unittest.TestCase):
         with self.assertRaises(AssertionError):
             check_equivalent([1, 2], [1, 3])
 
-        # Missing results must not pass the correctness check.
         with self.assertRaises(AssertionError):
             check_equivalent(float("nan"), float("nan"))
 
@@ -45,7 +42,6 @@ class TestCheckEquivalent(unittest.TestCase):
 
 class TestRunCase(unittest.TestCase):
     def test_timing_and_speedup(self):
-        # Fixed times check the calculation, not actual performance.
         with patch(
             "numcompute.benchmarking.time.perf_counter",
             side_effect=[0, 2, 10, 14, 20, 21, 30, 31],
@@ -63,7 +59,6 @@ class TestRunCase(unittest.TestCase):
         self.assertEqual(result["speedup"], 3.0)
 
     def test_mismatch_stops_timing(self):
-        # sum([1, 2]) is 3, but len([1, 2]) is 2.
         with patch("benchmark.run_benchmarks.benchmark") as timer:
             with self.assertRaises(AssertionError):
                 run_case(
@@ -109,7 +104,6 @@ class TestPrepareInputs(unittest.TestCase):
         self.assertTrue(np.all(data["features"][:, 0] == 7.0))
 
     def test_reproducible_data(self):
-        # The same seed must reproduce every input array.
         first = prepare_inputs(n=20, seed=42)
         second = prepare_inputs(n=20, seed=42)
 
@@ -173,7 +167,6 @@ class TestRunExperiments(unittest.TestCase):
         self.assertEqual(results[1]["shape"], [20, 10])
         self.assertIsNone(results[2]["k"])
 
-        # Top-k uses both fixed and proportional selections.
         self.assertEqual(results[3]["k"], 10)
         self.assertEqual(results[4]["k"], 2)
         self.assertEqual(
@@ -198,7 +191,6 @@ class TestRunExperiments(unittest.TestCase):
 
 class TestSaveRawTimings(unittest.TestCase):
     def test_csv_content(self):
-        # Fixed samples check file contents, not actual performance.
         results = [
             {
                 "case_id": "mean_20",
@@ -254,7 +246,6 @@ class TestSaveRawTimings(unittest.TestCase):
 
 class TestSaveSummary(unittest.TestCase):
     def test_csv_content(self):
-        # Fixed numbers check export contents, not performance.
         results = [
             {
                 "case_id": "mean_20",
@@ -329,7 +320,6 @@ class TestSaveSummary(unittest.TestCase):
 
 class TestGitInfo(unittest.TestCase):
     def test_clean_repository(self):
-        # Simulate commit output and an empty file status.
         with patch(
             "benchmark.run_benchmarks.subprocess.run",
             side_effect=[
@@ -390,7 +380,6 @@ class TestSaveEnvironment(unittest.TestCase):
 
             self.assertEqual(saved_path, path)
 
-            # Read the file back and compare its contents.
             with path.open(encoding="utf-8") as stream:
                 loaded = json.load(stream)
 
@@ -413,11 +402,9 @@ class TestSaveEnvironment(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             path = Path(folder) / "environment.json"
 
-            # The input must be a dictionary.
             with self.assertRaises(TypeError):
                 save_environment([1, 2], path)
 
-            # NumPy arrays cannot be saved directly as JSON.
             with self.assertRaises(TypeError):
                 save_environment({"values": np.array([1, 2])}, path)
 
@@ -435,7 +422,6 @@ class TestBuildRunInfo(unittest.TestCase):
             "error": None,
         }
 
-        # Supply a fixed Git result for this test.
         with patch(
             "benchmark.run_benchmarks.git_info",
             return_value=git,
@@ -461,7 +447,6 @@ class TestBuildRunInfo(unittest.TestCase):
             info["started_at_utc"].endswith("+00:00")
         )
 
-        # The complete record must support JSON conversion.
         content = json.dumps(info, allow_nan=False)
         loaded = json.loads(content)
         self.assertEqual(loaded, info)
@@ -528,7 +513,6 @@ class TestMain(unittest.TestCase):
             self.assertEqual(info["config"]["warmup"], 0)
             self.assertEqual(info["config"]["repeats"], 1)
 
-            # Two sizes produce ten cases.
             self.assertEqual(len(info["cases"]), 10)
             self.assertEqual(len(summary_rows), 11)
             self.assertEqual(len(raw_rows), 21)
@@ -538,7 +522,6 @@ class TestMain(unittest.TestCase):
                 summary_rows[-1][1], "topk_fraction_30"
             )
 
-            # Both CSV files must belong to the same run.
             for row in summary_rows[1:]:
                 self.assertEqual(row[0], info["run_id"])
 

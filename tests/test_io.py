@@ -1,4 +1,3 @@
-"""Contract tests using isolated temporary CSV fixtures."""
 import tempfile
 import unittest
 from pathlib import Path
@@ -66,8 +65,6 @@ class TestCSV(unittest.TestCase):
             with self.subTest(fill=fill), self.assertRaises(ValueError):
                 load_csv(self.write('1,\n'), dtype=np.int8, fill_value=fill)
 
-    #"阿德莱德" is the Chinese word for "Adelaide", and "城市" is the Chinese word for "city". 
-    #It is used to test whether UTF-8 can be correctly read and saved with test data
     def test_utf8_strings(self):
         assert_array_equal(load_csv(self.write('阿德莱德,\nSydney,NA\n'), dtype=str), [['阿德莱德', ''], ['Sydney', '']])
         self.assertEqual(load_csv(self.write('城市\n'), dtype='S6')[0, 0], '城市'.encode('utf-8'))

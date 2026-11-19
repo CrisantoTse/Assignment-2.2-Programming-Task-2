@@ -1,4 +1,3 @@
-"""Basic checks for the installed package."""
 
 import unittest
 from importlib.metadata import version

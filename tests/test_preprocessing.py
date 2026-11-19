@@ -1,4 +1,3 @@
-"""Tests for preprocessing behavior and the shared transformer protocol."""
 
 import tempfile
 import unittest
@@ -258,7 +257,6 @@ class TestStandardScaler(unittest.TestCase):
 
         result = scaler.transform([[5], [7]])
 
-        # Training mean=2, std=1; do not refit on the new data.
         assert_allclose(result, [[3], [5]])
         assert_allclose(scaler.mean_, [2])
         assert_allclose(scaler.scale_, [1])
@@ -354,7 +352,6 @@ class TestMinMaxScaler(unittest.TestCase):
 
         assert_allclose(result, [[2, 2], [2, 4]])
 
-        # Constant column uses an effective denominator of 1.
         assert_allclose(scaler.transform([[6, 15]]), [[4, 3]])
 
     def test_nan_handling(self):
@@ -501,7 +498,6 @@ class TestMinMaxScaler(unittest.TestCase):
         scaler = MinMaxScaler().fit([[10], [30]])
         scaler.feature_range = (-1, 1)
 
-        # Parameter changes take effect only on the next fit.
         assert_allclose(scaler.transform([[20]]), [[0.5]])
 
         scaler.fit([[0, 10], [4, 30]])
@@ -599,7 +595,6 @@ class TestOneHotEncoder(unittest.TestCase):
 
         result = OneHotEncoder().fit_transform(X)
 
-        # First block: red, blue. Second block: small, large.
         assert_array_equal(
             result,
             [

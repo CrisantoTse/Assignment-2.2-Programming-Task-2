@@ -1,4 +1,3 @@
-"""Tests for Pipeline and FeatureUnion composition."""
 
 import unittest
 import numpy as np
@@ -8,7 +7,6 @@ from numcompute.preprocessing import SimpleImputer, StandardScaler, MinMaxScaler
 
 
 class DummyEstimator:
-    """Predict the training mean of y; record the X seen by fit and predict."""
 
     def fit(self, X, y=None):
         self.fit_X_ = np.asarray(X, dtype=np.float64).copy()
@@ -23,7 +21,6 @@ class DummyEstimator:
 
 
 class CountingTransformer:
-    """Identity transformer that counts fit and transform calls."""
 
     def __init__(self):
         self.fit_calls = 0
@@ -41,7 +38,6 @@ class CountingTransformer:
 
 
 class ColumnSelectorStandIn:
-    """Test-only stand-in for preprocessing.ColumnSelector (not yet written)."""
 
     def __init__(self, columns, dtype=None):
         self.columns = columns
@@ -56,7 +52,6 @@ class ColumnSelectorStandIn:
 
 
 class FixedOutput:
-    """Transformer that ignores X and returns a fixed output."""
 
     def __init__(self, output):
         self.output = output
@@ -117,7 +112,6 @@ class TestPipelineResults(unittest.TestCase):
 
         assert_array_equal(pipeline.predict(X_TEST), [3.0, 3.0])
 
-        # The estimator receives scaled data, not the raw input.
         scaler = StandardScaler().fit(X_TRAIN)
         model = pipeline.named_steps["model"]
         assert_allclose(model.fit_X_, scaler.transform(X_TRAIN))
@@ -208,7 +202,6 @@ class TestPipelineErrors(unittest.TestCase):
     def test_final_step_without_predict(self):
         pipeline = Pipeline([("scaler", StandardScaler())])
 
-        # Unsupported operations raise TypeError whether or not fitted.
         with self.assertRaises(TypeError):
             pipeline.predict(X_TEST)
 
@@ -223,7 +216,6 @@ class TestPipelineErrors(unittest.TestCase):
         with self.assertRaises(TypeError):
             pipeline.fit_transform(X_TRAIN, Y_TRAIN)
 
-        # The unsupported fit_transform is rejected before fitting anything.
         self.assertFalse(hasattr(model, "mean_"))
 
         pipeline.fit(X_TRAIN, Y_TRAIN)
@@ -342,7 +334,6 @@ class TestFeatureUnion(unittest.TestCase):
             union.fit(X_TRAIN).transform(X_TRAIN)
 
     def test_failed_fit_transform_leaves_union_unfitted(self):
-        # fit succeeds because it does not check outputs; fit_transform does.
         union = FeatureUnion([("short", FixedOutput(np.zeros((3, 1))))]).fit(X_TRAIN)
 
         with self.assertRaises(ValueError):
@@ -416,7 +407,6 @@ class TestComposition(unittest.TestCase):
         assert_allclose(result.max(axis=0), 1.0)
 
 class TestNestedObjectReuse(unittest.TestCase):
-    """Reject shared fitted-state objects inside nested compositions."""
 
     def test_shared_transformer_between_union_branches(self):
         shared = StandardScaler()

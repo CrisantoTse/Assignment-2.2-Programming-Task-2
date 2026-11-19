@@ -1,4 +1,3 @@
-"""Tests for descriptive statistics."""
 
 import unittest
 import warnings
@@ -121,7 +120,6 @@ class TestMean(unittest.TestCase):
 class TestVarianceAndStd(unittest.TestCase):
 
     def test_population_variance(self):
-        # Mean = 2.5; squared deviations sum to 5.
         self.assertEqual(variance([1, 2, 3, 4]), 1.25)
 
     def test_sample_variance(self):
@@ -195,7 +193,6 @@ class TestVarianceAndStd(unittest.TestCase):
                 self.assertTrue(np.isnan(function([7], ddof=1)))
 
     def test_large_mean_small_variance(self):
-        # These offsets remain exactly representable at this scale.
         X = 1e12 + np.array([-2.0, -1.0, 0.0, 1.0, 2.0])
 
         self.assertAlmostEqual(variance(X), 2.0)
@@ -405,7 +402,6 @@ class TestQuantile(unittest.TestCase):
         assert_allclose(quantile([40, 10, 30, 20], [0, 0.5, 1]),[10, 25, 40],)
 
     def test_four_interpolation_methods(self):
-        # Position = 0.25 * (4 - 1) = 0.75.
         X = [0, 10, 20, 30]
 
         expected = {
@@ -579,7 +575,6 @@ class TestHistogram(unittest.TestCase):
         rng = np.random.default_rng(42)
         X = rng.normal(size=100)
 
-        # Use identical explicit edges to isolate counting behavior.
         edges = np.linspace(-2, 2, 9)
 
         counts, actual_edges = histogram(X, bins=edges)
@@ -711,11 +706,9 @@ class TestHistogram(unittest.TestCase):
     def test_unrepresentable_edges_rejected(self):
         limit = np.finfo(np.float64).max
 
-        # Adding or subtracting 0.5 cannot expand this value.
         with self.assertRaises(ValueError):
             histogram([limit, limit], bins=2)
 
-        # No float64 value exists strictly between these bounds.
         upper = np.nextafter(1.0, 2.0)
 
         with self.assertRaises(ValueError):

@@ -1,4 +1,3 @@
-"""Integration tests for statistics and preprocessing."""
 
 import unittest
 
@@ -30,12 +29,9 @@ class TestStatsIntegration(unittest.TestCase):
         scaler = StandardScaler()
         transformed = scaler.fit_transform(X)
 
-        # Both modules must use the same per-column NaN semantics.
         assert_allclose(mean(X, axis=0, nan_policy="omit"),[4.0, 30.0, 7.0],)
         assert_allclose(scaler.mean_,mean(X, axis=0, nan_policy="omit"),)
 
-        # Nonconstant columns have population variance 1.
-        # The constant column becomes zero.
         assert_allclose(mean(transformed, axis=0, nan_policy="omit"),[0.0, 0.0, 0.0],atol=1e-14,)
         assert_allclose(variance(transformed, axis=0, nan_policy="omit"),[1.0, 1.0, 0.0],atol=1e-14,)
 
@@ -48,14 +44,12 @@ class TestStatsIntegration(unittest.TestCase):
 
         filled = SimpleImputer(strategy="constant", fill_value=0.0,).fit_transform(X)
 
-        # Ignoring a missing value differs from filling it with zero.
         self.assertEqual(mean(X, nan_policy="omit"), 2.0)
         self.assertAlmostEqual(mean(filled), 4.0 / 3.0)
 
         assert_allclose(quantile(filled, [0.0, 0.5, 1.0]),[0.0, 1.0, 3.0],)
         self.assertEqual(median(filled), 1.0)
 
-        # Histogram requires a 1D input.
         counts, edges = histogram(filled[:, 0], bins=[0.0, 1.0, 3.0],)
 
         assert_array_equal(counts, [1, 2])
@@ -72,7 +66,6 @@ class TestStatsIntegration(unittest.TestCase):
 
         transformed = StandardScaler().fit_transform(X)
 
-        # StreamingStats handles one 1D stream at a time.
         for column in range(transformed.shape[1]):
             with self.subTest(column=column):
                 values = transformed[:, column]

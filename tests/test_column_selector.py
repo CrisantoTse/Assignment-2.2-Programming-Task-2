@@ -1,4 +1,3 @@
-"""Tests for column selection, validation and fitted state."""
 
 import unittest
 import numpy as np

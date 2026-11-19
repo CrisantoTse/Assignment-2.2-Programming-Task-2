@@ -1,4 +1,3 @@
-"""Tests for finite-difference gradients and Jacobians."""
 
 import unittest
 import numpy as np
@@ -11,7 +10,6 @@ def square_sum(v):
 
 
 class CountingFunction:
-    """Wrap f and record how many times it is called."""
 
     def __init__(self, f):
         self.f = f
@@ -186,7 +184,6 @@ class TestInputs(unittest.TestCase):
 class TestErrors(unittest.TestCase):
 
     def assert_both_raise(self, error, f_scalar, f_vector, x, **kwargs):
-        """Check that grad and jacobian raise error for both methods."""
         for method in ("central", "forward"):
             options = {"method": method, **kwargs}
 
@@ -281,10 +278,8 @@ class TestErrors(unittest.TestCase):
             grad(f, [1.0])
 
 class TestDifferenceStability(unittest.TestCase):
-    """Check finite quotients when output subtraction overflows."""
 
     def test_grad_representable_quotient(self):
-        # f(1) - f(-1) overflows, but the derivative is finite.
         result = grad(
             lambda v: 1e308 * v[0],
             [0.0],

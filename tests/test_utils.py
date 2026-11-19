@@ -109,7 +109,6 @@ class TestSigmoid(unittest.TestCase):
     def test_extreme_finite_values(self):
         values = [-1e308, -1000.0, 1000.0, 1e308]
 
-        # Overflow, invalid operations and division by zero must fail.
         with np.errstate(
             over="raise", invalid="raise", divide="raise"
         ):
@@ -144,7 +143,6 @@ class TestSigmoid(unittest.TestCase):
 
         result = sigmoid(sliced)
 
-        # The direct formula is safe for these small reference values.
         expected = 1.0 / (1.0 + np.exp(-sliced))
         assert_allclose(result, expected)
         self.assertEqual(result.shape, sliced.shape)
@@ -218,7 +216,6 @@ class TestSoftmax(unittest.TestCase):
 
         result = softmax(sliced, axis=-1)
 
-        # The direct formula is safe for these small values.
         exponentials = np.exp(sliced)
         expected = exponentials / exponentials.sum(axis=-1, keepdims=True)
 
@@ -238,7 +235,6 @@ class TestSoftmax(unittest.TestCase):
         with self.assertRaises(ValueError):
             softmax(3.0)
 
-        # Zero rows are allowed when the reduction axis is non-empty.
         result = softmax(np.empty((0, 3)), axis=1)
         self.assertEqual(result.shape, (0, 3))
 
@@ -333,7 +329,6 @@ class TestLogSumExp(unittest.TestCase):
         self.assertEqual(logsumexp(5.0), 5.0)
         self.assertEqual(logsumexp(-3.0), -3.0)
 
-        # A scalar has no axis to select.
         with self.assertRaises(ValueError):
             logsumexp(5.0, axis=0)
 
@@ -346,7 +341,6 @@ class TestLogSumExp(unittest.TestCase):
 
         result = logsumexp(sliced, axis=-1)
 
-        # The direct formula is safe for these small values.
         expected = np.log(np.sum(np.exp(sliced), axis=-1))
         assert_allclose(result, expected)
         self.assertEqual(result.shape, (2, 3))
@@ -424,7 +418,6 @@ class TestEuclideanDistances(unittest.TestCase):
             small = euclidean_distances([[1e-300, 1e-300]], [[0.0, 0.0]])
             beyond_range = euclidean_distances([[1e308]], [[-1e308]])
 
-        # Compare after rescaling so tiny values cannot pass as zero.
         assert_allclose(large / 1e308,[[np.sqrt(2.0)]],rtol=1e-14,atol=0.0,)
         assert_allclose(small / 1e-300,[[np.sqrt(2.0)]],rtol=1e-14,atol=0.0,)
         self.assertTrue(np.isposinf(beyond_range[0, 0]))
@@ -465,7 +458,6 @@ class TestEuclideanDistances(unittest.TestCase):
                     euclidean_distances([[0.0]], invalid)
 
     def test_blocks_non_contiguous_and_input_preservation(self):
-        # Both inputs exceed the block size of 64.
         X_base = np.arange(268.0).reshape(67, 4)
         Y_base = np.arange(264.0).reshape(66, 4)
         X_before = X_base.copy()
@@ -479,7 +471,6 @@ class TestEuclideanDistances(unittest.TestCase):
 
         result = euclidean_distances(X, Y)
 
-        # Direct squaring is safe for these small reference values.
         differences = X[:, None, :] - Y[None, :, :]
         expected = np.sqrt(
             np.sum(differences ** 2, axis=2)
@@ -539,11 +530,9 @@ class TestBatchIter(unittest.TestCase):
 
         assert_array_equal(first, second)
 
-        # Sorting by the unique first column recovers all original rows.
         restored = first[np.argsort(first[:, 0])]
         assert_array_equal(restored, X)
 
-        # Both columns must move together as complete samples.
         assert_array_equal(first[:, 1], first[:, 0] + 1)
         assert_array_equal(X, before)
 
@@ -630,7 +619,6 @@ class TestBatchIter(unittest.TestCase):
         with self.assertRaises(ValueError):
             list(batch_iter([[1, 2], [3]]))
 
-        # Empty input must still validate parameters.
         with self.assertRaises(ValueError):
             list(batch_iter([], batch_size=0))
 

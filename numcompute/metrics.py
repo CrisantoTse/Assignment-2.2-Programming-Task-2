@@ -1,11 +1,9 @@
-"""assess the metrics for classification and regression using numpy."""
 
 import numpy as np
 from numbers import Real
 from .utils import _as_float_array
 
 def _validate_label_values(array, name):
-    """Validate label values and return their common kind."""
     label_kind = None
 
     for value in array:
@@ -50,7 +48,6 @@ def _validate_label_values(array, name):
 
 
 def _validate_classification_inputs(y_true, y_pred):
-    """Validate and return one-dimensional classification labels."""
     true = np.asarray(y_true, dtype=object)
     pred = np.asarray(y_pred, dtype=object)
 
@@ -75,7 +72,6 @@ def _validate_classification_inputs(y_true, y_pred):
     return true, pred
 
 def _validate_metric_options(average, zero_division):
-    """Validate shared classification metric options."""
     if not isinstance(average, str):
         raise TypeError("average must be a string.")
 
@@ -99,21 +95,6 @@ def _validate_metric_options(average, zero_division):
         raise ValueError("zero_division must be 0 or 1.")
     
 def accuracy(y_true, y_pred):
-    """Return the fraction of correctly predicted labels.
-
-    y_true and y_pred must be non-empty 1D array-like inputs with
-    equal lengths. Labels must be homogeneous strings or finite
-    real numbers, with the same label kind in both inputs.
-
-    Return a float between 0 and 1. Inputs are not modified, and
-    non-contiguous arrays are supported.
-
-    Raise TypeError for unsupported or mixed label types.
-    Raise ValueError for invalid shapes, unequal lengths, empty
-    inputs, missing labels or non-finite numeric labels.
-
-    Time complexity: O(n). Additional space: O(n).
-    """
     true, pred = _validate_classification_inputs(
         y_true,
         y_pred,
@@ -122,31 +103,6 @@ def accuracy(y_true, y_pred):
     return float(np.mean(true == pred))
 
 def confusion_matrix(y_true, y_pred, labels=None):
-    """Return a confusion matrix and its ordered label array.
-
-    y_true and y_pred must be non-empty 1D array-like inputs with
-    equal lengths and homogeneous string or finite real labels.
-
-    labels is an optional non-empty 1D sequence of unique labels.
-    It must match the observed label kind and include every observed
-    class; additional unobserved classes are allowed. By default,
-    order follows first appearance in y_true, then unseen labels
-    from y_pred.
-
-    Return (matrix, labels_array). The int64 matrix has shape (c, c),
-    with true classes in rows and predicted classes in columns.
-    The object label array has shape (c,) and preserves label values.
-    Inputs are not modified; non-contiguous arrays are supported.
-
-    Raise TypeError for unsupported or incompatible label types.
-    Raise ValueError for invalid shapes, empty inputs, unequal
-    lengths, missing or non-finite labels, duplicate explicit labels,
-    or explicit labels that omit observed classes.
-
-    For n samples and c classes, default label discovery takes
-    O(n*c) time. Matrix construction takes expected O(n + c**2)
-    time using dictionary lookup. Additional space: O(n + c**2).
-    """
     true, pred = _validate_classification_inputs(
         y_true,
         y_pred,
@@ -226,31 +182,6 @@ def precision(
     pos_label=1,
     zero_division=0,
 ):
-    """Return binary or averaged classification precision.
-
-    y_true and y_pred are non-empty 1D array-like labels of equal
-    length: homogeneous strings or finite real numbers of matching
-    kind. Inputs are not modified; non-contiguous arrays are allowed.
-
-    average accepts 'binary', 'macro', 'micro' or 'weighted'.
-    Binary averaging permits at most two observed classes and uses
-    the observed class pos_label, which defaults to 1.
-    Other averages ignore pos_label.
-
-    Per-class precision is TP / (TP + FP). Macro averages classes
-    equally; micro aggregates counts before division; weighted
-    uses true-label support. zero_division is 0 or 1 and supplies
-    the result when a denominator is zero.
-
-    Return a scalar float. Raise TypeError for unsupported label
-    types, non-string average or boolean zero_division. Raise
-    ValueError for invalid data shapes or values, unsupported
-    options, or an invalid binary-class configuration.
-
-    For n samples and c observed classes, time is O(n*c + c**2)
-    and additional space is O(n + c**2), including confusion-matrix
-    construction.
-    """
     _validate_metric_options(average, zero_division)
 
     matrix, labels = confusion_matrix(y_true, y_pred)
@@ -320,31 +251,6 @@ def recall(
     pos_label=1,
     zero_division=0,
 ):
-    """Return binary or averaged classification recall.
-
-    y_true and y_pred are non-empty 1D array-like labels of equal
-    length: homogeneous strings or finite real numbers of matching
-    kind. Inputs are not modified; non-contiguous arrays are allowed.
-
-    average accepts 'binary', 'macro', 'micro' or 'weighted'.
-    Binary averaging permits at most two observed classes and uses
-    the observed class pos_label, which defaults to 1.
-    Other averages ignore pos_label.
-
-    Per-class recall is TP / (TP + FN). Macro averages classes
-    equally; micro aggregates counts before division; weighted
-    uses true-label support. zero_division is 0 or 1 and supplies
-    the result when a denominator is zero.
-
-    Return a scalar float. Raise TypeError for unsupported label
-    types, non-string average or boolean zero_division. Raise
-    ValueError for invalid data shapes or values, unsupported
-    options, or an invalid binary-class configuration.
-
-    For n samples and c observed classes, time is O(n*c + c**2)
-    and additional space is O(n + c**2), including confusion-matrix
-    construction.
-    """
     _validate_metric_options(average, zero_division)
 
     matrix, labels = confusion_matrix(y_true, y_pred)
@@ -408,31 +314,6 @@ def f1(
     pos_label=1,
     zero_division=0,
 ):
-    """Return binary or averaged classification F1 score.
-
-    y_true and y_pred are non-empty 1D array-like labels of equal
-    length: homogeneous strings or finite real numbers of matching
-    kind. Inputs are not modified; non-contiguous arrays are allowed.
-
-    average accepts 'binary', 'macro', 'micro' or 'weighted'.
-    Binary averaging permits at most two observed classes and uses
-    the observed class pos_label, which defaults to 1.
-    Other averages ignore pos_label.
-
-    Per-class F1 is 2*TP / (2*TP + FP + FN). Macro averages these
-    scores equally; weighted uses true-label support. Micro
-    aggregates counts before calculating F1. zero_division is
-    0 or 1 and supplies the result when a denominator is zero.
-
-    Return a scalar float. Raise TypeError for unsupported label
-    types, non-string average or boolean zero_division. Raise
-    ValueError for invalid data shapes or values, unsupported
-    options, or an invalid binary-class configuration.
-
-    For n samples and c observed classes, time is O(n*c + c**2)
-    and additional space is O(n + c**2), including confusion-matrix
-    construction.
-    """
     _validate_metric_options(average, zero_division)
 
     matrix, labels = confusion_matrix(y_true, y_pred)
@@ -510,7 +391,6 @@ def f1(
     )
 
 def mse(y_true, y_pred):
-    """Return the scalar mean squared error over all elements."""
     true = _as_float_array(y_true, name="y_true", finite=True)
     pred = _as_float_array(y_pred, name="y_pred", finite=True)
 
@@ -546,8 +426,6 @@ def mse(y_true, y_pred):
     normalized = residuals / scale
     mean_square = np.mean(normalized * normalized, dtype=np.float64)
 
-    # Recover the root mean squared error before the final square.
-    # Avoid computing scale**2, which could overflow prematurely.
     with np.errstate(over="ignore", invalid="ignore"):
         rms = scale * np.sqrt(mean_square)
         result = rms * rms
